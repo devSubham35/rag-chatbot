@@ -3,9 +3,11 @@
 import {
   PromptInput,
   PromptInputBody,
+  PromptInputButton,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputTools,
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import {
@@ -13,6 +15,18 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorGroup,
+  ModelSelectorInput,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorLogo,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from "@/components/ai-elements/model-selector";
 import {
   Message,
   MessageContent,
@@ -31,10 +45,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { chatModels, defaultChatModel } from "@/lib/chat-models";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import {
+  Check,
+  ChevronsUpDown,
   Loader,
   Menu,
   Plus,
@@ -83,12 +100,15 @@ const ConversationSkeleton = () => (
 
 const RagChatBot = () => {
   const [input, setInput] = useState("");
+  const [selectedModelId, setSelectedModelId] = useState(defaultChatModel.id);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [loadedChatId, setLoadedChatId] = useState<string | null>(null);
   const [loadedMessages, setLoadedMessages] = useState<UIMessage[]>([]);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
   const lastSavedSignatureRef = useRef("");
 
   const persistMessages = useCallback(
@@ -148,6 +168,9 @@ const RagChatBot = () => {
     },
   });
   const isChatBusy = status === "submitted" || status === "streaming";
+  const selectedModel =
+    chatModels.find((model) => model.id === selectedModelId) ??
+    defaultChatModel;
 
   const createChat = useCallback(async () => {
     const response = await fetch("/api/chats", { method: "POST" });
@@ -245,25 +268,31 @@ const RagChatBot = () => {
   };
 
   const handleDeleteChat = async (chatId: string) => {
-    if (isChatBusy) {
+    if (isChatBusy || deletingChatId) {
       return;
     }
 
-    const response = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
+    setDeletingChatId(chatId);
 
-    if (!response.ok) {
-      throw new Error("Failed to delete chat");
-    }
+    try {
+      const response = await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
 
-    const remainingChats = chats.filter((chat) => chat.id !== chatId);
-    setChats(remainingChats);
-
-    if (activeChatId === chatId) {
-      if (remainingChats[0]) {
-        await loadChat(remainingChats[0].id);
-      } else {
-        await createChat();
+      if (!response.ok) {
+        throw new Error("Failed to delete chat");
       }
+
+      const remainingChats = chats.filter((chat) => chat.id !== chatId);
+      setChats(remainingChats);
+
+      if (activeChatId === chatId) {
+        if (remainingChats[0]) {
+          await loadChat(remainingChats[0].id);
+        } else {
+          await createChat();
+        }
+      }
+    } finally {
+      setDeletingChatId(null);
     }
   };
 
@@ -277,7 +306,7 @@ const RagChatBot = () => {
         text: message.text,
       },
       {
-        body: { chatId: activeChatId },
+        body: { chatId: activeChatId, modelId: selectedModelId },
       }
     );
     setInput("");
@@ -315,7 +344,10 @@ const RagChatBot = () => {
         {isLoadingChats ? (
           <ChatSidebarSkeleton />
         ) : (
-          chats.map((chat) => (
+          chats.map((chat) => {
+            const isDeleting = deletingChatId === chat.id;
+
+            return (
             <div
               className={cn(
                 "group flex w-full items-start gap-1 rounded-md pr-1 transition-colors hover:bg-muted",
@@ -342,7 +374,7 @@ const RagChatBot = () => {
                     <button
                       aria-label={`Delete ${chat.title}`}
                       className="mt-1.5 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-destructive group-hover:opacity-100"
-                      disabled={isChatBusy}
+                      disabled={isChatBusy || Boolean(deletingChatId)}
                       type="button"
                     >
                       <Trash2 className="size-3.5" />
@@ -361,15 +393,18 @@ const RagChatBot = () => {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+                      disabled={isDeleting}
                       onClick={() => void handleDeleteChat(chat.id)}
                     >
-                      Delete
+                      {isDeleting && <Loader className="size-3 animate-spin" />}
+                      {isDeleting ? "Deleting" : "Delete"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </aside>
@@ -483,7 +518,64 @@ const RagChatBot = () => {
                 />
               </PromptInputBody>
 
-              <PromptInputFooter className="justify-end">
+              <PromptInputFooter>
+                <PromptInputTools>
+                  <ModelSelector
+                    onOpenChange={setIsModelSelectorOpen}
+                    open={isModelSelectorOpen}
+                  >
+                    <ModelSelectorTrigger
+                      render={
+                        <PromptInputButton
+                          className="max-w-48 gap-1.5"
+                          disabled={isChatBusy}
+                          tooltip="Switch model"
+                        />
+                      }
+                    >
+                      <ModelSelectorLogo provider={selectedModel.providerSlug} />
+                      <ModelSelectorName>{selectedModel.name}</ModelSelectorName>
+                      <ChevronsUpDown className="size-3 text-muted-foreground" />
+                    </ModelSelectorTrigger>
+                    <ModelSelectorContent>
+                      <ModelSelectorInput placeholder="Search models..." />
+                      <ModelSelectorList>
+                        <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                        {["Google", "OpenAI"].map((providerName) => (
+                          <ModelSelectorGroup
+                            heading={providerName}
+                            key={providerName}
+                          >
+                            {chatModels
+                              .filter(
+                                (model) => model.providerName === providerName
+                              )
+                              .map((model) => (
+                                <ModelSelectorItem
+                                  key={model.id}
+                                  onSelect={() => {
+                                    setSelectedModelId(model.id);
+                                    setIsModelSelectorOpen(false);
+                                  }}
+                                  value={model.id}
+                                >
+                                  <ModelSelectorLogo
+                                    provider={model.providerSlug}
+                                  />
+                                  <ModelSelectorName>
+                                    {model.name}
+                                  </ModelSelectorName>
+                                  {selectedModelId === model.id && (
+                                    <Check className="ml-auto size-4" />
+                                  )}
+                                </ModelSelectorItem>
+                              ))}
+                          </ModelSelectorGroup>
+                        ))}
+                      </ModelSelectorList>
+                    </ModelSelectorContent>
+                  </ModelSelector>
+                </PromptInputTools>
                 <PromptInputSubmit status={status} />
               </PromptInputFooter>
             </PromptInput>

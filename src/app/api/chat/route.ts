@@ -11,9 +11,11 @@ import {
 
 import { z } from "zod";
 import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import { auth } from "@clerk/nextjs/server";
 import { searchDocuments } from "@/lib/search";
 import { prisma } from "@/lib/db";
+import { getChatModel } from "@/lib/chat-models";
 
 const tools = {
   searchKnowledgeBase: tool({
@@ -55,10 +57,12 @@ export async function POST(req: Request) {
     const {
       id,
       chatId,
+      modelId,
       messages,
-    }: { id?: string; chatId?: string; messages: UIMessage[] } =
+    }: { id?: string; chatId?: string; modelId?: string; messages: UIMessage[] } =
       await req.json();
     const activeChatId = chatId ?? id;
+    const selectedModel = getChatModel(modelId);
 
     if (!activeChatId) {
       return new Response("Chat id is required", { status: 400 });
@@ -84,7 +88,10 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: google("gemini-2.5-flash"),
+      model:
+        selectedModel.provider === "openai"
+          ? openai(selectedModel.id)
+          : google(selectedModel.id),
       messages: await convertToModelMessages(messages),
       tools,
       maxRetries: 1,
