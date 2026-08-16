@@ -1,5 +1,6 @@
 import { Button } from './ui/button'
 import { Show, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs'
+import Link from 'next/link'
 
 
 const Navigation = () => {
@@ -26,6 +27,12 @@ const Navigation = () => {
                 </Show>
 
                 <Show when="signed-in">
+                    <Button asChild variant="ghost" size="xl">
+                        <Link href="/chat">Chats</Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="xl">
+                        <Link href="/upload">Uploads</Link>
+                    </Button>
                     <SignOutButton redirectUrl='/'>
                         <Button variant="outline" size="xl">Sign Out</Button>
                     </SignOutButton>
