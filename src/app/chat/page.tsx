@@ -37,7 +37,7 @@ const RagChatBot = () => {
   };
 
   return (
-    <div className="relative mx-auto h-screen w-full max-w-4xl">
+    <div className="relative mx-auto h-[93vh] w-full max-w-4xl">
       <div className="flex h-full flex-col pb-5">
         <Conversation>
           <ConversationContent>
