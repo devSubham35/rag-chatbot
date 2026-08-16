@@ -7,7 +7,7 @@ export async function searchDocuments(
   threshold: number = 0.5
 ) {
   // Generate embedding for the user's query
-  const embedding = await generateEmbedding(query);
+  const embedding = await generateEmbedding(query, "RETRIEVAL_QUERY");
 
   // Convert embedding array to pgvector format
   const vector = JSON.stringify(embedding);

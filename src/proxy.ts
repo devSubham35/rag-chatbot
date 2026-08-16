@@ -25,7 +25,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   if (isAdminRoute(pathname)) {
-    const isAdmin = sessionClaims.metadata?.roles === 'admin'
+    const isAdmin = sessionClaims.metadata?.role === 'admin'
 
     if (!isAdmin) {
       return NextResponse.redirect(new URL('/', req.url))

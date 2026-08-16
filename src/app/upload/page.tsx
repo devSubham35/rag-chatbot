@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { AlertCircle, CheckCircle2, FileText, Loader2, UploadCloud } from "lucide-react";
-import { processPdfFile } from "./action";
+import { useEffect, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  UploadCloud,
+} from "lucide-react";
+import { getUploadedDocuments, processPdfFile } from "./action";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,13 +22,41 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+type UploadedDocument = {
+  id: string;
+  name: string;
+  chunkCount: number;
+  uploadedAt: string;
+};
+
 export default function PDFUpload() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [uploads, setUploads] = useState<UploadedDocument[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "error" | "success";
     text: string;
   } | null>(null);
+
+  const loadUploads = async () => {
+    setIsHistoryLoading(true);
+
+    try {
+      const history = await getUploadedDocuments();
+      setUploads(history);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadUploads();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,6 +79,7 @@ export default function PDFUpload() {
             ? `${result.message || "PDF processed successfully"} (${result.chunks} chunks indexed)`
             : result.message || "PDF processed successfully",
         });
+        await loadUploads();
         e.target.value = "";
         setSelectedFile(null);
       } else {
@@ -63,8 +99,85 @@ export default function PDFUpload() {
   };
 
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-4xl items-center px-3 py-8 sm:px-4 sm:py-10">
-      <section className="w-full space-y-5">
+    <main className="flex h-[calc(100svh-4rem)] min-h-0 w-full overflow-hidden">
+      <aside className="hidden h-full min-h-0 w-72 shrink-0 flex-col border-r bg-background md:flex">
+        <div className="flex items-center justify-between gap-2 border-b px-3 py-3">
+          <p className="text-sm font-semibold">Uploaded documents</p>
+          <span className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
+            {uploads.length}
+          </span>
+        </div>
+
+        <div className="scrollbar-none min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+          {isHistoryLoading ? (
+            <div className="flex items-center gap-2 px-2 py-3 text-xs text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              Loading uploads
+            </div>
+          ) : uploads.length === 0 ? (
+            <p className="px-2 py-3 text-xs text-muted-foreground">
+              No documents uploaded yet.
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {uploads.map((upload) => (
+                <div
+                  className="rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted"
+                  key={upload.id}
+                >
+                  <p className="truncate font-medium">{upload.name}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{upload.chunkCount} chunks</span>
+                    <span>
+                      {formatDistanceToNow(new Date(upload.uploadedAt), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
+
+      <section className="scrollbar-none flex min-w-0 flex-1 items-center overflow-y-auto overflow-x-hidden px-3 py-6 sm:px-4 sm:py-8">
+        <div className="mx-auto w-full max-w-4xl min-w-0 space-y-5">
+        <div className="rounded-lg border bg-card/60 md:hidden">
+          <div className="flex items-center justify-between gap-2 border-b px-3 py-3">
+            <p className="text-sm font-semibold">Uploaded documents</p>
+            <span className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
+              {uploads.length}
+            </span>
+          </div>
+          <div className="scrollbar-none max-h-48 space-y-1 overflow-y-auto p-2">
+            {isHistoryLoading ? (
+              <div className="flex items-center gap-2 px-2 py-3 text-xs text-muted-foreground">
+                <Loader2 className="size-3 animate-spin" />
+                Loading uploads
+              </div>
+            ) : uploads.length === 0 ? (
+              <p className="px-2 py-3 text-xs text-muted-foreground">
+                No documents uploaded yet.
+              </p>
+            ) : (
+              uploads.map((upload) => (
+                <div className="rounded-md px-2 py-2 text-sm" key={upload.id}>
+                  <p className="truncate font-medium">{upload.name}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{upload.chunkCount} chunks</span>
+                    <span>
+                      {formatDistanceToNow(new Date(upload.uploadedAt), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1 text-muted-foreground text-xs">
             <FileText className="size-3.5" />
@@ -79,7 +192,7 @@ export default function PDFUpload() {
           </p>
         </div>
 
-        <Card className="border-border/80 bg-card/80 shadow-sm">
+        <Card className="min-w-0 border-border/80 bg-card/80 shadow-sm">
           <CardHeader>
             <CardTitle>PDF source</CardTitle>
             <CardDescription>
@@ -162,6 +275,7 @@ export default function PDFUpload() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </section>
     </main>
   );

@@ -6,11 +6,33 @@ import { PDFParse } from "pdf-parse";
 import { chunkContent } from "@/lib/chuncking";
 import { generateEmbeddings } from "@/lib/embeddings";
 
+export async function getUploadedDocuments() {
+  const { sessionClaims } = await auth.protect();
+
+  if (sessionClaims.metadata?.role !== "admin") {
+    return [];
+  }
+
+  const uploads = await prisma.uploadedDocument.findMany({
+    orderBy: {
+      uploadedAt: "desc",
+    },
+    take: 50,
+  });
+
+  return uploads.map((upload) => ({
+    id: upload.id,
+    name: upload.name,
+    chunkCount: upload.chunkCount,
+    uploadedAt: upload.uploadedAt.toISOString(),
+  }));
+}
+
 export async function processPdfFile(formData: FormData) {
   try {
-    const { sessionClaims } = await auth.protect();
+    const { sessionClaims, userId } = await auth.protect();
 
-    if (sessionClaims.metadata?.roles !== "admin") {
+    if (sessionClaims.metadata?.role !== "admin") {
       return {
         success: false,
         error: "You do not have permission to upload PDFs",
@@ -76,6 +98,14 @@ export async function processPdfFile(formData: FormData) {
         )
       `;
     }
+
+    await prisma.uploadedDocument.create({
+      data: {
+        name: file.name,
+        chunkCount: chunks.length,
+        uploadedBy: userId,
+      },
+    });
 
     return {
       success: true,

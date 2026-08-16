@@ -8,7 +8,7 @@ export default async function UploadLayout({
 }) {
   const { sessionClaims } = await auth.protect();
 
-  if (sessionClaims.metadata?.roles !== "admin") {
+  if (sessionClaims.metadata?.role !== "admin") {
     notFound();
   }
 

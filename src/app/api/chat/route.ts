@@ -5,7 +5,6 @@ import {
   stepCountIs,
   InferUITools,
   type UIMessage,
-  toUIMessageStream,
   convertToModelMessages,
   createUIMessageStreamResponse,
 } from "ai";
@@ -14,6 +13,7 @@ import { z } from "zod";
 import { google } from "@ai-sdk/google";
 import { auth } from "@clerk/nextjs/server";
 import { searchDocuments } from "@/lib/search";
+import { prisma } from "@/lib/db";
 
 const tools = {
   searchKnowledgeBase: tool({
@@ -50,14 +50,44 @@ export type ChatMessage = UIMessage<never, UIDataTypes, ChatTools>;
 
 export async function POST(req: Request) {
   try {
-    await auth.protect();
+    const { userId } = await auth.protect();
 
-    const { messages }: { messages: UIMessage[] } = await req.json();
+    const {
+      id,
+      chatId,
+      messages,
+    }: { id?: string; chatId?: string; messages: UIMessage[] } =
+      await req.json();
+    const activeChatId = chatId ?? id;
+
+    if (!activeChatId) {
+      return new Response("Chat id is required", { status: 400 });
+    }
+
+    const chat = await prisma.chatSession.findUnique({
+      where: { id: activeChatId },
+      select: { id: true, userId: true },
+    });
+
+    if (chat && chat.userId !== userId) {
+      return new Response("Chat not found", { status: 404 });
+    }
+
+    if (!chat) {
+      await prisma.chatSession.create({
+        data: {
+          id: activeChatId,
+          userId,
+          title: "New chat",
+        },
+      });
+    }
 
     const result = streamText({
       model: google("gemini-2.5-flash"),
-      prompt: await convertToModelMessages(messages),
+      messages: await convertToModelMessages(messages),
       tools,
+      maxRetries: 1,
       system: `You are a helpful assistant with access to a knowledge base. 
           When users ask questions, search the knowledge base for relevant information.
           Always search before answering if the question might relate to uploaded documents.
@@ -66,7 +96,20 @@ export async function POST(req: Request) {
     });
 
     return createUIMessageStreamResponse({
-      stream: toUIMessageStream(result),
+      stream: result.toUIMessageStream({
+        onError: (error) => {
+          console.error("Chat stream error:", error);
+
+          if (
+            error instanceof Error &&
+            error.message.toLowerCase().includes("quota")
+          ) {
+            return "The AI provider quota is currently exhausted. Please wait a moment and try again.";
+          }
+
+          return "I could not generate a response. Please try again.";
+        },
+      }),
     });
   } catch (error) {
     console.error("Error streaming chat completion:", error);

@@ -4,7 +4,8 @@ import { google, type GoogleEmbeddingModelOptions } from "@ai-sdk/google";
 const embeddingModel = google.embedding("gemini-embedding-001");
 
 export async function generateEmbedding(
-  text: string
+  text: string,
+  taskType: GoogleEmbeddingModelOptions["taskType"] = "RETRIEVAL_DOCUMENT"
 ): Promise<number[]> {
   const input = text.replaceAll("\n", " ");
 
@@ -14,7 +15,7 @@ export async function generateEmbedding(
     providerOptions: {
       google: {
         outputDimensionality: 1536,
-        taskType: "RETRIEVAL_DOCUMENT",
+        taskType,
       } satisfies GoogleEmbeddingModelOptions,
     },
   });

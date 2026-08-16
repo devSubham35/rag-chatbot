@@ -1,16 +1,17 @@
 "use client"
 
-import { Button } from './ui/button'
+import { Button, buttonVariants } from './ui/button'
 import { Badge } from './ui/badge'
 import { Show, SignInButton, SignOutButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 
 const Navigation = () => {
     const { sessionClaims } = useAuth()
     const pathname = usePathname()
-    const isAdmin = sessionClaims?.metadata?.roles === "admin"
+    const isAdmin = sessionClaims?.metadata?.role === "admin"
 
     return (
         <header className='flex min-h-16 w-full flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 lg:px-20'>
@@ -42,13 +43,15 @@ const Navigation = () => {
                 </Show>
 
                 <Show when="signed-in">
-                    <Button asChild variant="ghost" size="xl">
-                        <Link href="/chat">Chats</Link>
-                    </Button>
                     {isAdmin && (
-                        <Button asChild variant="ghost" size="xl">
-                            <Link href="/upload">Uploads</Link>
-                        </Button>
+                        <>
+                            <Link className={cn(buttonVariants({ variant: "ghost", size: "xl" }))} href="/chat">
+                                Chats
+                            </Link>
+                            <Link className={cn(buttonVariants({ variant: "ghost", size: "xl" }))} href="/upload">
+                                Uploads
+                            </Link>
+                        </>
                     )}
                     <UserButton />
                     <SignOutButton redirectUrl='/'>
