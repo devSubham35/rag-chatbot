@@ -63,14 +63,14 @@ export default function PDFUpload() {
   };
 
   return (
-    <main className="mx-auto flex min-h-[93vh] w-full max-w-4xl items-center px-4 py-10">
+    <main className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-4xl items-center px-3 py-8 sm:px-4 sm:py-10">
       <section className="w-full space-y-5">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1 text-muted-foreground text-xs">
             <FileText className="size-3.5" />
             Document ingestion
           </div>
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             Upload a PDF
           </h1>
           <p className="max-w-2xl text-muted-foreground text-sm leading-6">
@@ -89,7 +89,7 @@ export default function PDFUpload() {
           <CardContent>
             <div className="space-y-4">
               <Label
-                className="group flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-background/50 px-6 py-8 text-center transition-colors hover:bg-muted/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
+                className="group flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border bg-background/50 px-4 py-6 text-center transition-colors hover:bg-muted/40 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 sm:min-h-56 sm:px-6 sm:py-8"
                 htmlFor="pdf-upload"
               >
                 <span className="mb-4 flex size-12 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors group-hover:text-foreground">
@@ -126,7 +126,7 @@ export default function PDFUpload() {
                 <Alert
                   className={
                     message.type === "success"
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                      ? "border-primary/30 bg-primary/10 text-primary"
                       : undefined
                   }
                   variant={message.type === "error" ? "destructive" : "default"}
@@ -143,11 +143,12 @@ export default function PDFUpload() {
                 </Alert>
               )}
 
-              <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+              <div className="flex flex-col items-stretch justify-between gap-3 border-t border-border pt-4 sm:flex-row sm:items-center">
                 <p className="text-muted-foreground text-xs">
                   Large PDFs can take a moment while embeddings are generated.
                 </p>
                 <Button
+                  className="w-full sm:w-auto"
                   disabled={isLoading}
                   onClick={() => document.getElementById("pdf-upload")?.click()}
                   size="lg"

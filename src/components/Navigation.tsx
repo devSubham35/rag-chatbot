@@ -1,7 +1,8 @@
 "use client"
 
 import { Button } from './ui/button'
-import { Show, SignInButton, SignOutButton, SignUpButton, useAuth } from '@clerk/nextjs'
+import { Badge } from './ui/badge'
+import { Show, SignInButton, SignOutButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -12,9 +13,18 @@ const Navigation = () => {
     const isAdmin = sessionClaims?.metadata?.roles === "admin"
 
     return (
-        <div className='w-full h-[7vh] flex items-center justify-between px-20 border-b'>
-            <h1 className='font-semibold text-lg'><span className='text-emerald-400'>RAG</span> Chatbot</h1>
-            <div className='flex items-center gap-2'>
+        <header className='flex min-h-16 w-full flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 lg:px-20'>
+            <div className='flex shrink-0 items-center gap-2'>
+                <Link className='font-semibold text-base sm:text-lg' href='/'>
+                    <span className='text-primary'>RAG</span> Chatbot
+                </Link>
+                {isAdmin && (
+                    <Badge className='border-primary/30 bg-primary/10 text-primary' variant='outline'>
+                        Admin
+                    </Badge>
+                )}
+            </div>
+            <nav className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
 
                 <Show when="signed-out">
                     <SignInButton
@@ -40,12 +50,13 @@ const Navigation = () => {
                             <Link href="/upload">Uploads</Link>
                         </Button>
                     )}
+                    <UserButton />
                     <SignOutButton redirectUrl='/'>
                         <Button variant="outline" size="xl">Sign Out</Button>
                     </SignOutButton>
                 </Show>
-            </div>
-        </div>
+            </nav>
+        </header>
     )
 }
 

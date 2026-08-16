@@ -37,10 +37,18 @@ const RagChatBot = () => {
   };
 
   return (
-    <div className="relative mx-auto h-[93vh] w-full max-w-4xl">
-      <div className="flex h-full flex-col pb-5">
-        <Conversation>
-          <ConversationContent>
+    <main className="relative mx-auto h-[calc(100svh-4rem)] w-full max-w-4xl px-3 sm:px-4">
+      <div className="flex h-full min-h-0 flex-col pb-3 sm:pb-5">
+        <Conversation className="scrollbar-none">
+          <ConversationContent className="scrollbar-none">
+            {messages.length === 0 && (
+              <div className="flex min-h-[calc(100svh-18rem)] items-center justify-center text-center">
+                <p className="text-foreground/30 text-sm">
+                  No chats yet. Ask something to get started.
+                </p>
+              </div>
+            )}
+
             {messages.map((message) => (
               <div key={message.id}>
                 {message.parts.map((part, index) => {
@@ -75,7 +83,7 @@ const RagChatBot = () => {
         >
           <PromptInputBody>
             <PromptInputTextarea
-              className="min-h-28 font-sans text-sm font-normal leading-6 
+              className="min-h-24 sm:min-h-28 font-sans text-sm font-normal leading-6 
               focus:outline-0 placeholder:font-sans placeholder:text-sm placeholder:font-normal"
               onChange={(event) => setInput(event.target.value)}
               value={input}
@@ -88,7 +96,7 @@ const RagChatBot = () => {
 
         </PromptInput>
       </div>
-    </div>
+    </main>
   );
 };
 
