@@ -9,16 +9,24 @@ const Navigation = () => {
             <div className='flex items-center gap-2'>
 
                 <Show when="signed-out">
-                    <SignInButton mode='modal'>
+                    <SignInButton
+                        fallbackRedirectUrl="/chat"
+                        forceRedirectUrl="/chat"
+                        mode='modal'
+                    >
                         <Button size="xl" variant="outline">Sign In</Button>
                     </SignInButton>
-                    <SignUpButton mode='modal'>
+                    <SignUpButton
+                        fallbackRedirectUrl="/chat"
+                        forceRedirectUrl="/chat"
+                        mode='modal'
+                    >
                         <Button size="xl">Sign Up</Button>
                     </SignUpButton>
                 </Show>
 
                 <Show when="signed-in">
-                    <SignOutButton>
+                    <SignOutButton redirectUrl='/'>
                         <Button variant="outline" size="xl">Sign Out</Button>
                     </SignOutButton>
                 </Show>

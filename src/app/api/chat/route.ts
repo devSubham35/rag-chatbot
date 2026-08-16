@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { google } from "@ai-sdk/google";
 import { 
     streamText,
@@ -9,6 +10,8 @@ import {
 
 export async function POST(req: Request) {
   try {
+    await auth.protect();
+
     const { messages }: { messages: UIMessage[] } = await req.json();
 
     const result = streamText({
