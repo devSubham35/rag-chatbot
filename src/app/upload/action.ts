@@ -1,5 +1,6 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { PDFParse } from "pdf-parse";
 import { chunkContent } from "@/lib/chuncking";
@@ -7,6 +8,15 @@ import { generateEmbeddings } from "@/lib/embeddings";
 
 export async function processPdfFile(formData: FormData) {
   try {
+    const { sessionClaims } = await auth.protect();
+
+    if (sessionClaims.metadata?.roles !== "admin") {
+      return {
+        success: false,
+        error: "You do not have permission to upload PDFs",
+      };
+    }
+
     const file = formData.get("pdf");
 
     if (!(file instanceof File)) {

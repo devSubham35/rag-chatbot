@@ -1,9 +1,16 @@
+"use client"
+
 import { Button } from './ui/button'
-import { Show, SignInButton, SignOutButton, SignUpButton } from '@clerk/nextjs'
+import { Show, SignInButton, SignOutButton, SignUpButton, useAuth } from '@clerk/nextjs'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 
 const Navigation = () => {
+    const { sessionClaims } = useAuth()
+    const pathname = usePathname()
+    const isAdmin = sessionClaims?.metadata?.roles === "admin"
+
     return (
         <div className='w-full h-[7vh] flex items-center justify-between px-20 border-b'>
             <h1 className='font-semibold text-lg'><span className='text-emerald-400'>RAG</span> Chatbot</h1>
@@ -11,15 +18,13 @@ const Navigation = () => {
 
                 <Show when="signed-out">
                     <SignInButton
-                        fallbackRedirectUrl="/chat"
-                        forceRedirectUrl="/chat"
+                        fallbackRedirectUrl={pathname}
                         mode='modal'
                     >
                         <Button size="xl" variant="outline">Sign In</Button>
                     </SignInButton>
                     <SignUpButton
-                        fallbackRedirectUrl="/chat"
-                        forceRedirectUrl="/chat"
+                        fallbackRedirectUrl={pathname}
                         mode='modal'
                     >
                         <Button size="xl">Sign Up</Button>
@@ -30,9 +35,11 @@ const Navigation = () => {
                     <Button asChild variant="ghost" size="xl">
                         <Link href="/chat">Chats</Link>
                     </Button>
-                    <Button asChild variant="ghost" size="xl">
-                        <Link href="/upload">Uploads</Link>
-                    </Button>
+                    {isAdmin && (
+                        <Button asChild variant="ghost" size="xl">
+                            <Link href="/upload">Uploads</Link>
+                        </Button>
+                    )}
                     <SignOutButton redirectUrl='/'>
                         <Button variant="outline" size="xl">Sign Out</Button>
                     </SignOutButton>
