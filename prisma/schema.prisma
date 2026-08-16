@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Document {
+  id        String      @id @default(uuid())
+  content   String
+  embedding Unsupported("vector(1536)")
+
+  @@map("documents")
+}
+
+model UploadedDocument {
+  id         String   @id @default(uuid())
+  name       String
+  chunkCount Int
+  uploadedBy String
+  uploadedAt DateTime @default(now())
+
+  @@index([uploadedAt])
+  @@map("uploaded_documents")
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String
+  title     String        @default("New chat")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  chatId    String
+  messageId String
+  role      String
+  content   String
+  order     Int
+  createdAt DateTime    @default(now())
+  chat      ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, messageId])
+  @@index([chatId, order])
+  @@map("chat_messages")
+}
