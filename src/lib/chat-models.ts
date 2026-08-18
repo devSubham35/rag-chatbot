@@ -16,20 +16,20 @@ export const chatModels = [
     providerName: "Google",
     providerSlug: "google",
   },
-  {
-    id: "gpt-4o-mini",
-    name: "GPT-4o Mini",
-    provider: "openai",
-    providerName: "OpenAI",
-    providerSlug: "openai",
-  },
-  {
-    id: "gpt-4o",
-    name: "GPT-4o",
-    provider: "openai",
-    providerName: "OpenAI",
-    providerSlug: "openai",
-  },
+  // {
+  //   id: "gpt-4o-mini",
+  //   name: "GPT-4o Mini",
+  //   provider: "openai",
+  //   providerName: "OpenAI",
+  //   providerSlug: "openai",
+  // },
+  // {
+  //   id: "gpt-4o",
+  //   name: "GPT-4o",
+  //   provider: "openai",
+  //   providerName: "OpenAI",
+  //   providerSlug: "openai",
+  // },
 ] satisfies ChatModel[];
 
 export const defaultChatModel = chatModels[0];
